@@ -77,9 +77,9 @@ class ControlLogin extends ControlRoot{
 
                 if ($user = $this->model->users->get($payload->id)) {
     
-                    // if (isset($user->bloqueado) && $user->bloqueado) {
-                    //     $this->view->erro('Usuário bloqueado pela administração, entre em contato com o suporte.', 'user_blocked', 401, true);
-                    // }
+                    if (isset($user->bloqueado) && $user->bloqueado) {
+                        $this->view->erro('Usuário bloqueado pela administração, entre em contato com o suporte.', 'user_blocked', 401, true);
+                    }
 
                     // if (isset($user->deleted) && $user->deleted) {
                     //     $this->view->erro('Usuário deletado', 'user_deleted', 401, true);

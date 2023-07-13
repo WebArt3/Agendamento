@@ -22,9 +22,9 @@ class Database {
         
         $this->servername = "localhost";
 
-        $this->username = "webart45_";
-        $this->password = "##@1";
-        $this->db = "webart45_";
+        $this->username = "webart45_agendamento";
+        $this->password = "Agendamento##@1";
+        $this->db = "webart45_agendamento";
 
         $options = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

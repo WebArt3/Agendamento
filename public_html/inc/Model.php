@@ -10,6 +10,18 @@ class Model {
         return new ModelUsers();
     }
 
+    private function empresas() {
+        return new ModelEmpresas();
+    }
+
+    private function endereco() {
+        return new ModelEndereco();
+    }
+
+    private function agenda() {
+        return new ModelAgenda();
+    }
+
     public function __get($model) {
         return $this->$model();
     }

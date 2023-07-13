@@ -6,7 +6,7 @@ class ModelUsers extends ModelRoot {
 
         try {
 
-            $stmt = $this->pdo->prepare("SELECT * FROM empresa WHERE id = :id");
+            $stmt = $this->pdo->prepare("SELECT * FROM empresas WHERE id = :id");
             $stmt = $this->db->bindArray($stmt, [
                 'id' => $id
             ]);
