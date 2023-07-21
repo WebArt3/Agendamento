@@ -14,7 +14,7 @@ class ModelAgenda extends ModelRoot {
                 'inicio' => $values->inicio,
                 'fim' => $values->fim,
                 'guid' => $guid,
-                'empresas_id' => $values->empresas_id
+                'empresas_id' => $values->empresa
             ]);
             $stmt->execute();
 
@@ -142,6 +142,137 @@ class ModelAgenda extends ModelRoot {
 
         } catch (PDOException $erro) {
             $this->view->erro('Erro ao cancelar horario', 'db_model', 500, true);
+        }
+
+        return false;
+
+    }
+
+    // buscar horario
+    public function get($id) {
+
+        try {
+
+            $stmt = $this->pdo->prepare("SELECT * FROM horarios WHERE `guid` = :id");
+            $stmt = $this->db->bindArray($stmt, [
+                'id' => $id
+            ]);
+            $stmt->execute();
+
+            if ($stmt->rowCount() > 0) {
+
+                $horario = $stmt->fetch(PDO::FETCH_OBJ);
+
+                $horario->empresa = $this->model->empresa->get($horario->empresas_id);
+                $horario->cliente = $this->getCliente($horario->clientes_id);
+
+                return $horario;
+
+            }
+
+        } catch (PDOException $erro) {
+            $this->view->erro('Erro ao buscar horario', 'db_model', 500, true);
+        }
+
+        return false;
+
+    }
+
+    // buscar cliente
+    public function getCliente($id) {
+
+        try {
+
+            $stmt = $this->pdo->prepare("SELECT * FROM clientes WHERE `id` = :id");
+            $stmt = $this->db->bindArray($stmt, [
+                'id' => $id
+            ]);
+            $stmt->execute();
+
+            if ($stmt->rowCount() > 0) {
+
+                $cliente = $stmt->fetch(PDO::FETCH_OBJ);
+
+                $cliente->endereco = $this->model->endereco->get($cliente->endereco_id);
+
+                return $cliente;
+
+            }
+
+        } catch (PDOException $erro) {
+            $this->view->erro('Erro ao buscar cliente', 'db_model', 500, true);
+        }
+
+        return false;
+
+    }
+
+    // buscar horarios
+    public function getAll($values) {
+
+        try {
+
+            $stmt = $this->pdo->prepare("SELECT * FROM horarios WHERE `inicio` >= :inicio AND `fim` <= :fim AND cancelado = 0 AND empresas_id = :empresa ORDER BY `inicio` ASC");
+            $stmt = $this->db->bindArray($stmt, [
+                'inicio' => $values->inicio,
+                'fim' => $values->fim,
+                'empresa' => $values->empresa
+            ]);
+            $stmt->execute();
+
+            if ($stmt->rowCount() > 0) {
+
+                $horarios = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+                foreach ($horarios as $key => $horario) {
+
+                    $horarios[$key]->cliente = $this->getCliente($horario->clientes_id);
+
+                }
+
+                return $horarios;
+
+            }
+
+        } catch (PDOException $erro) {
+            $this->view->erro('Erro ao buscar horarios', 'db_model', 500, true);
+        }
+
+        return false;
+
+    }
+
+    // verificar disponibilidade de horario
+    public function check($values) {
+
+        try {
+
+            $stmt = $this->pdo->prepare(
+                "SELECT * FROM horarios 
+                WHERE 
+                    (
+                        (`inicio` >= :inicio AND `fim` <= :fim) OR
+                        (`inicio` <= :inicio AND `fim` >= :inicio) OR
+                        (`inicio` <= :fim AND `fim` >= :fim)
+                    ) AND
+                    cancelado = 0 AND
+                    empresas_id = :empresa"
+            );
+            $stmt = $this->db->bindArray($stmt, [
+                'inicio' => $values->inicio,
+                'fim' => $values->fim,
+                'empresa' => $values->empresa
+            ]);
+            $stmt->execute();
+
+            if ($stmt->rowCount() > 0) {
+
+                return $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            }
+
+        } catch (PDOException $erro) {
+            $this->view->erro('Erro ao verificar disponibilidade de horario', 'db_model', 500, true);
         }
 
         return false;

@@ -274,11 +274,12 @@ class ModelEmpresas extends ModelRoot {
 
         try {
 
-            $stmt = $this->pdo->prepare("UPDATE config SET tempo = :tempo, quantidade = :quantidade WHERE empresas_id = :empresa_id");
+            $stmt = $this->pdo->prepare("UPDATE config SET tempo = :tempo, quantidade = :quantidade, limite_alteracao = :limite_alteracao WHERE empresas_id = :empresa_id");
             $stmt = $this->db->bindArray($stmt, [
                 'empresa_id' => $values->empresa,
                 'tempo' => $values->tempo,
-                'quantidade' => $values->quantidade
+                'quantidade' => $values->quantidade,
+                'limite_alteracao' => $values->limite_alteracao
             ]);
             $stmt->execute();
 

@@ -16,6 +16,10 @@ class Control {
         return new ControlLogin($this->args);
     }
 
+    private function agenda() {
+        return new ControlAgenda($this->args);
+    }
+
     public function __get($control) {
         return $this->$control();
     }
