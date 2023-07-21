@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `webart45_agendamento`.`empresas` (
   `endereco_id` INT NOT NULL,
   `created_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  INDEX `fk_empresas_endereco1_idx` (`endereco_id` ASC) VISIBLE,
+  INDEX `fk_empresas_endereco1_idx` (`endereco_id` ASC) ,
   CONSTRAINT `fk_empresas_endereco1`
     FOREIGN KEY (`endereco_id`)
     REFERENCES `webart45_agendamento`.`endereco` (`id`)
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS `webart45_agendamento`.`config` (
   `empresas_id` INT NOT NULL,
   `limite_alteracao` INT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
-  INDEX `fk_config_empresas_idx` (`empresas_id` ASC) VISIBLE,
+  INDEX `fk_config_empresas_idx` (`empresas_id` ASC) ,
   CONSTRAINT `fk_config_empresas`
     FOREIGN KEY (`empresas_id`)
     REFERENCES `webart45_agendamento`.`empresas` (`id`)
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS `webart45_agendamento`.`config_horario` (
   `hora_final` VARCHAR(45) NULL,
   `empresas_id` INT NOT NULL,
   PRIMARY KEY (`id`),
-  INDEX `fk_config_horario_empresas1_idx` (`empresas_id` ASC) VISIBLE,
+  INDEX `fk_config_horario_empresas1_idx` (`empresas_id` ASC) ,
   CONSTRAINT `fk_config_horario_empresas1`
     FOREIGN KEY (`empresas_id`)
     REFERENCES `webart45_agendamento`.`empresas` (`id`)
@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS `webart45_agendamento`.`horarios` (
   `solicitado_cancelamento` TINYINT NULL,
   `cancelado` TINYINT NULL,
   PRIMARY KEY (`id`),
-  INDEX `fk_horarios_empresas1_idx` (`empresas_id` ASC) VISIBLE,
+  INDEX `fk_horarios_empresas1_idx` (`empresas_id` ASC) ,
   CONSTRAINT `fk_horarios_empresas1`
     FOREIGN KEY (`empresas_id`)
     REFERENCES `webart45_agendamento`.`empresas` (`id`)
@@ -139,8 +139,8 @@ CREATE TABLE IF NOT EXISTS `webart45_agendamento`.`cliente` (
   `endereco_id` INT NULL,
   `horarios_id` INT NOT NULL,
   PRIMARY KEY (`id`),
-  INDEX `fk_cliente_endereco1_idx` (`endereco_id` ASC) VISIBLE,
-  INDEX `fk_cliente_horarios1_idx` (`horarios_id` ASC) VISIBLE,
+  INDEX `fk_cliente_endereco1_idx` (`endereco_id` ASC) ,
+  INDEX `fk_cliente_horarios1_idx` (`horarios_id` ASC) ,
   CONSTRAINT `fk_cliente_endereco1`
     FOREIGN KEY (`endereco_id`)
     REFERENCES `webart45_agendamento`.`endereco` (`id`)

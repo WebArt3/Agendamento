@@ -35,6 +35,8 @@ class ModelEndereco extends ModelRoot {
             $this->view->erro('Erro ao adicionar endereço', 'db_model', 500, true);
         }
 
+        return false;
+
     }
 
     // atualizar um endereço
@@ -44,7 +46,7 @@ class ModelEndereco extends ModelRoot {
 
             $stmt = $this->pdo->prepare("UPDATE endereco SET cep = :cep, rua = :rua, numero = :numero, bairro = :bairro, cidade = :cidade, uf = :uf, complemento = :complemento WHERE id = :id");
             $stmt = $this->db->bindArray($stmt, [
-                'id' => $values->id,
+                'id' => $values->endereco_id,
                 'cep' => $values->cep,
                 'rua' => $values->rua,
                 'numero' => $values->numero,
@@ -61,11 +63,11 @@ class ModelEndereco extends ModelRoot {
 
             }
 
-            return false;
-
         } catch (PDOException $erro) {
             $this->view->erro('Erro ao atualizar endereço', 'db_model', 500, true);
         }
+
+        return false;
 
     }
 
@@ -86,11 +88,11 @@ class ModelEndereco extends ModelRoot {
 
             }
 
-            return false;
-
         } catch (PDOException $erro) {
             $this->view->erro('Erro ao deletar endereço', 'db_model', 500, true);
         }
+
+        return false;
 
     }
 
@@ -111,11 +113,11 @@ class ModelEndereco extends ModelRoot {
 
             }
 
-            return false;
-
         } catch (PDOException $erro) {
             $this->view->erro('Erro ao buscar endereço', 'db_model', 500, true);
         }
+
+        return false;
 
     }
 

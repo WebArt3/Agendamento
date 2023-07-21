@@ -16,6 +16,10 @@ class ControlLogin extends ControlRoot{
 
         if($user = $this->model->login->login($values->email, $values->password)) {
 
+            if (isset($user->bloqueado) && $user->bloqueado) {
+                return $this->view->erro('Usuário bloqueado pela administração, entre em contato com o suporte.', 'user_blocked', 401);
+            }
+
             $json = ["token" => $this->getToken($user)];
             return $this->view->send($json);
 
@@ -66,7 +70,7 @@ class ControlLogin extends ControlRoot{
 
         if ($payload = JWT::decode($token, SYSTEMKEY)) {
 
-            if (isset($payload->admin)) {
+            if (isset($payload->admin) && $payload->admin) {
 
                 if ($admin = $this->model->users->getAdmin($payload->id)) {
                     $admin->admin = true;

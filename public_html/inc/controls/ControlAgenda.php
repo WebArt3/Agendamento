@@ -32,10 +32,21 @@ class ControlAgenda extends ControlRoot{
 
         // valida campos
         $values->telefone = Validation::regexNum($values->telefone);
-        $values->cpf = Validation::limpaCpf($values->cpf);
+
+        if ($cpf = Validation::validaCpf($values->cpf)) {
+            $values->cpf = $cpf;
+        } else {
+            return $this->view->erro("CPF inválido", "invalid_cpf", 500);
+        }
 
         if ($values->cep) {
             $values->cep = Validation::regexNum($values->cep);
+        }
+
+        if (Validation::validaEmail($values->email)) {
+            $values->email = strtolower($values->email);
+        } else {
+            return $this->view->erro("Email inválido", "invalid_email", 500);
         }
 
         // get empresa
@@ -46,6 +57,28 @@ class ControlAgenda extends ControlRoot{
 
                 // adiciona fim
                 $values->fim = date("Y-m-d H:i:s", strtotime("+{$configuracao->tempo} hours", strtotime($values->inicio)));
+
+                // verifica horarios de atendimento da empresa
+                $dia_da_semana = date('N', strtotime($values->inicio));
+                
+                if ($atendimento = $this->model->empresas->getHorarios($values->empresa, $dia_da_semana)) {
+
+                    foreach ($atendimento as $att_horario) {
+                        $att_horario->inicio = strtotime($att_horario->inicio);
+                        $att_horario->fim = strtotime($att_horario->fim);
+
+                        $inicio = strtotime($values->inicio);
+                        $fim = strtotime($values->fim);
+
+                        if (!($inicio >= $att_horario->inicio && $fim <= $att_horario->fim)) {
+                            return $this->view->erro("Empresa não atende este horário", "indisponible_time", 404);
+                        }
+
+                    }
+
+                } else {
+                    return $this->view->erro("Empresa não atende este dia", "indisponible_day", 404);
+                }
 
                 // check horario
                 if ($horarios = $this->model->agenda->check($values)) {

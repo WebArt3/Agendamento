@@ -12,13 +12,14 @@ class ModelEmpresas extends ModelRoot {
                 // criptografia secundária
                 $password = md5(base64_encode(md5($values->password)));
     
-                $stmt = $this->pdo->prepare("INSERT INTO empresas (nome, email, telefone, password, cnpj) VALUES (:nome, :email, :telefone, :password, :cnpj)");
+                $stmt = $this->pdo->prepare("INSERT INTO empresas (nome, email, telefone, password, cnpj, endereco_id) VALUES (:nome, :email, :telefone, :password, :cnpj, :endereco)");
                 $stmt = $this->db->bindArray($stmt, [
                     'nome' => $values->nome,
                     'email' => $values->email,
                     'telefone' => $values->telefone,
                     'password' => $password,
-                    'cnpj' => $values->cnpj
+                    'cnpj' => $values->cnpj,
+                    'endereco' => $endereco_id
                 ]);
                 $stmt->execute();
     
@@ -50,7 +51,7 @@ class ModelEmpresas extends ModelRoot {
 
         try {
 
-            $this->model->endereco->update($values);
+            $att_end = $this->model->endereco->update($values);
 
             $stmt = $this->pdo->prepare("UPDATE empresas SET nome = :nome, email = :email, telefone = :telefone WHERE id = :id");
             $stmt = $this->db->bindArray($stmt, [
@@ -63,8 +64,12 @@ class ModelEmpresas extends ModelRoot {
 
             if ($stmt->rowCount() > 0) {
 
-                return $this->get($values->id);
+                return $this->get($values->empresa);
 
+            }
+
+            if ($att_end) {
+                return $this->get($values->empresa);
             }
 
         } catch (PDOException $erro) {
@@ -141,6 +146,7 @@ class ModelEmpresas extends ModelRoot {
         try {
 
             $stmt = $this->pdo->prepare("SELECT * FROM empresas WHERE nome LIKE :search OR email LIKE :search OR telefone LIKE :search OR cnpj LIKE :search");
+            $stmt = $this->db->bindArray($stmt, ['search' => "%$search%"]);
             $stmt->execute();
 
             if ($stmt->rowCount() > 0) {
@@ -201,7 +207,7 @@ class ModelEmpresas extends ModelRoot {
 
         try {
 
-            $stmt = $this->pdo->prepare("UPDATE empresas SET bloqueado = 0 WHERE id = :id");
+            $stmt = $this->pdo->prepare("UPDATE empresas SET bloqueado = 1 WHERE id = :id");
             $stmt = $this->db->bindArray($stmt, ['id' => $id]);
             $stmt->execute();
 
@@ -224,7 +230,7 @@ class ModelEmpresas extends ModelRoot {
 
         try {
 
-            $stmt = $this->pdo->prepare("UPDATE empresas SET bloqueado = 1 WHERE id = :id");
+            $stmt = $this->pdo->prepare("UPDATE empresas SET bloqueado = 0 WHERE id = :id");
             $stmt = $this->db->bindArray($stmt, ['id' => $id]);
             $stmt->execute();
 
@@ -334,14 +340,14 @@ class ModelEmpresas extends ModelRoot {
         try {
 
             $stmt = $this->pdo->prepare(
-                "INSERT INTO config_horario 
+                'INSERT INTO config_horario 
                     (empresas_id, dia_semana, hora_inicial, hora_final) 
                 VALUES 
-                    (:empresa_id, 1, '08:00', '18:00'),
-                    (:empresa_id, 2, '08:00', '18:00'),
-                    (:empresa_id, 3, '08:00', '18:00'),
-                    (:empresa_id, 4, '08:00', '18:00'),
-                    (:empresa_id, 5, '08:00', '18:00'),"
+                    (:empresa_id, 1, "08:00", "18:00"),
+                    (:empresa_id, 2, "08:00", "18:00"),
+                    (:empresa_id, 3, "08:00", "18:00"),
+                    (:empresa_id, 4, "08:00", "18:00"),
+                    (:empresa_id, 5, "08:00", "18:00")'
             );
             $stmt = $this->db->bindArray($stmt, [
                 'empresa_id' => $empresa
@@ -355,6 +361,7 @@ class ModelEmpresas extends ModelRoot {
             }
 
         } catch (PDOException $erro) {
+            print_r($erro);
             $this->view->erro('Erro ao criar horarios', 'db_model', 500, true);
         }
 

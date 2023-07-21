@@ -20,6 +20,10 @@ class Control {
         return new ControlAgenda($this->args);
     }
 
+    private function empresas() {
+        return new ControlEmpresas($this->args);
+    }
+
     public function __get($control) {
         return $this->$control();
     }

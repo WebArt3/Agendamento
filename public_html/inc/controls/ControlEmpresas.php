@@ -13,7 +13,7 @@ class ControlEmpresas extends ControlRoot{
 
         $values = Validation::filter($this->app->post, [
             'nome' => 'string',
-            'email' => 'email',
+            'email' => 'string',
             'telefone' => 'string',
             'cnpj' => 'string',
             'password' => 'string',
@@ -52,7 +52,7 @@ class ControlEmpresas extends ControlRoot{
             return $this->view->erro("CNPJ já cadastrado", "cnpj_error");
         }
 
-        if ($empresa = $this->model->exemple->create($values)) {
+        if ($empresa = $this->model->empresas->create($values)) {
             return $this->view->send($empresa);
         }
 
@@ -65,11 +65,13 @@ class ControlEmpresas extends ControlRoot{
 
         $user = $this->control->login->checkToken();
 
-        $values = (Object) Validation::filter($this->app->post, [
-            'empresa' => 'int'
-        ]);
+        if (isset($user->admin) && $user->admin) {
+            $empresa = Validation::filter($this->app->post, ['empresa' => 'int'])["empresa"];
+        } else {
+            $empresa = $user->id;
+        }
 
-        if ($empresa = $this->model->empresas->get($values->id)) {
+        if ($empresa = $this->model->empresas->get($empresa)) {
             return $this->view->send($empresa);
         }
 
@@ -99,7 +101,7 @@ class ControlEmpresas extends ControlRoot{
 
         $values = Validation::filter($this->app->post, [
             'nome' => 'string',
-            'email' => 'email',
+            'email' => 'string',
             'telefone' => 'string',
 
             'cep' => 'string',
@@ -131,7 +133,9 @@ class ControlEmpresas extends ControlRoot{
             return $this->view->erro("Email inválido", "email_error");
         }
 
-        if ($this->model->empresas->get($values->empresa)) {
+        if ($emp =$this->model->empresas->get($values->empresa)) {
+
+            $values->endereco_id = $emp->endereco_id;
 
             if ($empresa = $this->model->empresas->update($values)) {
                 return $this->view->send($empresa);
@@ -159,7 +163,7 @@ class ControlEmpresas extends ControlRoot{
         }
 
         if ($empresa = $this->model->empresas->updatePassword($values)) {
-            return $this->view->send($empresa);
+            return $this->view->sucesso();
         }
 
         return $this->view->erro("Erro ao atualizar senha", "update_password_error", 500);
@@ -175,8 +179,8 @@ class ControlEmpresas extends ControlRoot{
             'empresa' => 'int'
         ]);
 
-        if ($empresa = $this->model->empresas->block($values->empresa)) {
-            return $this->view->send($empresa);
+        if ($this->model->empresas->block($values->empresa)) {
+            return $this->view->sucesso();
         }
 
         return $this->view->erro("Erro ao bloquear empresa", "block_error", 500);
@@ -192,8 +196,8 @@ class ControlEmpresas extends ControlRoot{
             'empresa' => 'int'
         ]);
 
-        if ($empresa = $this->model->empresas->unblock($values->empresa)) {
-            return $this->view->send($empresa);
+        if ($this->model->empresas->unblock($values->empresa)) {
+            return $this->view->sucesso();
         }
 
         return $this->view->erro("Erro ao desbloquear empresa", "unblock_error", 500);
@@ -212,6 +216,7 @@ class ControlEmpresas extends ControlRoot{
         $values = (object) Validation::filter($this->app->post, [
             'tempo' => 'int',
             'quantidade' => 'int',
+            'limite_alteracao' => 'int',
         ]);
 
         if (isset($user->admin) && $user->admin) {
@@ -221,7 +226,7 @@ class ControlEmpresas extends ControlRoot{
         }
 
         if ($empresa = $this->model->empresas->updateConfig($values)) {
-            return $this->view->send($empresa);
+            return $this->view->sucesso();
         }
 
         return $this->view->erro("Erro ao atualizar configuração", "update_config_error", 500);
@@ -234,12 +239,12 @@ class ControlEmpresas extends ControlRoot{
         $user = $this->control->login->checkToken();
 
         if (isset($user->admin) && $user->admin) {
-            $values->empresa = Validation::filter($this->app->post, ['empresa' => 'int'])["empresa"];
+            $empresa = Validation::filter($this->app->post, ['empresa' => 'int'])["empresa"];
         } else {
-            $values->empresa = $user->id;
+            $empresa = $user->id;
         }
 
-        if ($config = $this->model->empresas->getConfig($values->empresa)) {
+        if ($config = $this->model->empresas->getConfig($empresa)) {
             return $this->view->send($config);
         }
 
@@ -309,12 +314,12 @@ class ControlEmpresas extends ControlRoot{
         $user = $this->control->login->checkToken();
 
         if (isset($user->admin) && $user->admin) {
-            $values->empresa = Validation::filter($this->app->post, ['empresa' => 'int'])["empresa"];
+            $empresa = Validation::filter($this->app->post, ['empresa' => 'int'])["empresa"];
         } else {
-            $values->empresa = $user->id;
+            $empresa = $user->id;
         }
 
-        if ($horarios = $this->model->empresas->getHorarios($values->empresa)) {
+        if ($horarios = $this->model->empresas->getHorarios($empresa)) {
             return $this->view->send($horarios);
         }
 
