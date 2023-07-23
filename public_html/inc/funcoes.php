@@ -23,9 +23,11 @@ function diff_days($datai, $datao) {
 
 	// Resgata diferença entre as datas
 	$dateInterval = $data_inicio->diff($data_fim);
-	$dias = $dateInterval->days;
+	$anos_em_d = $dateInterval->y * 365;
+	$meses_em_d = $dateInterval->m * 30;
+	$dias = $dateInterval->d;
 
-	return $dias;
+	return $anos_em_d + $meses_em_d + $dias;
 }
 
 // medir diferença de horas para a hora atual
@@ -35,9 +37,12 @@ function diff_horas($datai) {
 
 	// Resgata diferença entre as datas
 	$dateInterval = $data_inicio->diff($data_fim);
+	$anos_em_h = $dateInterval->y * 8760;
+	$meses_em_h = $dateInterval->m * 730;
+	$dias_em_h = $dateInterval->d * 24;
 	$horas = $dateInterval->h;
 
-	return $horas;
+	return $anos_em_h + $meses_em_h + $dias_em_h + $horas;
 }
 
 //cryptografa img base64

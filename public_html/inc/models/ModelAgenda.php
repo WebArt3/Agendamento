@@ -102,7 +102,7 @@ class ModelAgenda extends ModelRoot {
     }
 
     // solicitar cancelamento de horario
-    public function cancel($values) {
+    public function requestCancel($values) {
 
         try {
 
@@ -260,12 +260,14 @@ class ModelAgenda extends ModelRoot {
                         (`inicio` <= :fim AND `fim` >= :fim)
                     ) AND
                     cancelado = 0 AND
+                    `guid` != :guid AND
                     empresas_id = :empresa"
             );
             $stmt = $this->db->bindArray($stmt, [
                 'inicio' => $values->inicio,
                 'fim' => $values->fim,
-                'empresa' => $values->empresa
+                'empresa' => $values->empresa,
+                'guid' => isset($values->guid) ? $values->guid : null
             ]);
             $stmt->execute();
 

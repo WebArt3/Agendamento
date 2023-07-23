@@ -49,6 +49,11 @@ class ControlAgenda extends ControlRoot{
             // verifica configurações
             if($configuracao = $this->model->empresas->getConfig($empresa->id)) {
 
+                // verifica se horario ja passou
+                if (strtotime(date("Y-m-d H:i:s")) >= strtotime($values->inicio)) {
+                    return $this->view->erro("Horario não pode ser agendado", "time_traveller", 500);
+                }
+
                 // adiciona fim
                 $values->fim = date("Y-m-d H:i:s", strtotime("+{$configuracao->tempo} hours", strtotime($values->inicio)));
 
@@ -110,12 +115,22 @@ class ControlAgenda extends ControlRoot{
         // get horario
         if ($horario = $this->model->agenda->get($values->guid)) {
 
+            // verifica se horario ja passou
+            if (strtotime(date("Y-m-d H:i:s")) >= strtotime($values->inicio)) {
+                return $this->view->erro("Horario não pode ser alterado", "time_traveller", 500);
+            }
+
             // verifica configurações
             if($configuracao = $this->model->empresas->getConfig($horario->empresas_id)) {
 
-                // verifica se agora é pelomenos um dia antes do horario
-                if (strtotime($horario->inicio) <= strtotime("-{$configuracao->limite_alteracao} day", strtotime("now"))) {
-                    return $this->view->erro("Horario não pode ser alterado", "very_recent", 404);
+                // permite pular verificação de dias antes ate 1 hora depois de criar o horario
+                if (strtotime(date("Y-m-d H:i:s")) >= strtotime("+1 hours", strtotime($horario->data_created))) {
+
+                    // verifica se agora é pelomenos um dia antes do horario
+                    if (strtotime(date("Y-m-d H:i:s")) >= strtotime("-1 days", strtotime($horario->inicio))) {
+                        return $this->view->erro("Horario não pode ser alterado", "very_recent", 500);
+                    }
+
                 }
 
                 // adiciona fim
@@ -212,7 +227,7 @@ class ControlAgenda extends ControlRoot{
 
         $values->empresa = $empresa;
 
-        if ($horarios = $this->model->exemple->getAll($values)) {
+        if ($horarios = $this->model->agenda->getAll($values)) {
             return $this->view->send($horarios);
         }
 
@@ -277,6 +292,85 @@ class ControlAgenda extends ControlRoot{
         }
 
         return $this->view->erro("Empresa não encontrada", "not_found_empresa", 404);
+
+    }
+
+    // solicita cancelamento de horario
+    public function requestCancel() {
+
+        $values = (Object) Validation::filter($this->app->post, [
+            'guid' => 'string',
+        ]);
+
+        // get horario
+        if ($horario = $this->model->agenda->get($values->guid)) {
+
+            // verifica se horario ja passou
+            if (strtotime(date("Y-m-d H:i:s")) >= strtotime($horario->inicio)) {
+                return $this->view->erro("Horario não pode ser cancelado", "time_traveller", 500);
+            }
+
+            // verifica se agora é pelomenos um dia antes do horario
+            if (strtotime(date("Y-m-d H:i:s")) >= strtotime("-1 days", strtotime($horario->inicio))) {
+                return $this->view->erro("Horario não pode ser cancelado", "very_recent", 500);
+            }
+
+            // verifica se horario ja foi cancelado
+            if ($horario->cancelado) {
+                return $this->view->erro("Horario já cancelado", "already_cancelled", 500);
+            }
+
+            // cancela horario
+            if ($horario = $this->model->agenda->requestCancel($values)) {
+                return $this->view->send($horario);
+            }
+    
+            return $this->view->erro("Erro ao cancelar horario", "cancel_error", 500);
+
+        }
+
+        return $this->view->erro("Horario não encontrado", "not_found", 404);
+
+    }
+
+    // cancela horario
+    public function cancel() {
+
+        $user = $this->control->login->checkToken();
+
+        $values = (Object) Validation::filter($this->app->post, [
+            'guid' => 'string',
+        ]);
+
+        if (isset($user->admin)) {
+            $values->empresa = Validation::filter($this->app->post, ['empresa' => 'int'])["empresa"];
+        } else {
+            $values->empresa = $user->id;
+        }
+
+        // get horario
+        if ($horario = $this->model->agenda->get($values->guid)) {
+
+            // verifica se horario ja passou
+            if (strtotime(date("Y-m-d H:i:s")) >= strtotime($horario->inicio)) {
+                return $this->view->erro("Horario não pode ser cancelado", "time_traveller", 500);
+            }
+
+            // verifica se horario ja foi cancelado
+            if ($horario->cancelado) {
+                return $this->view->erro("Horario já cancelado", "already_cancelled", 500);
+            }
+
+            // cancela horario
+            if ($horario = $this->model->agenda->cancel($values)) {
+                return $this->view->send($horario);
+            }
+    
+            return $this->view->erro("Erro ao cancelar horario", "cancel_error", 500);
+
+        }
+
+        return $this->view->erro("Horario não encontrado", "not_found", 404);
 
     }
 
