@@ -374,7 +374,7 @@ class ModelEmpresas extends ModelRoot {
 
         try {
 
-            $stmt = $this->pdo->prepare("UPDATE config_horario SET hora_inicial = :hora_inicial, hora_final = :hora_final WHERE horario_id = :horario_id");
+            $stmt = $this->pdo->prepare("UPDATE config_horario SET hora_inicial = :hora_inicial, hora_final = :hora_final, dia_semana = :dia_semana WHERE id = :horario_id");
             $stmt = $this->db->bindArray($stmt, [
                 'horario_id' => $values->horario,
                 'dia_semana' => $values->dia,
@@ -430,7 +430,7 @@ class ModelEmpresas extends ModelRoot {
 
         try {
 
-            $stmt = $this->pdo->prepare("SELECT * FROM config_horario WHERE horario_id = :horario_id");
+            $stmt = $this->pdo->prepare("SELECT * FROM config_horario WHERE id = :horario_id");
             $stmt = $this->db->bindArray($stmt, ['horario_id' => $horario]);
             $stmt->execute();
 
@@ -458,7 +458,7 @@ class ModelEmpresas extends ModelRoot {
                 $add = ' AND dia_semana = :dia_semana';
             }
 
-            $stmt = $this->pdo->prepare("SELECT * FROM config_horario WHERE empresas_id = :empresa_id $add");
+            $stmt = $this->pdo->prepare("SELECT * FROM config_horario WHERE empresas_id = :empresa_id $add ORDER BY dia_semana ASC");
             $stmt = $this->db->bindArray($stmt, [
                 'empresa_id' => $empresa,
                 'dia_semana:optional' => $dia
@@ -484,7 +484,7 @@ class ModelEmpresas extends ModelRoot {
 
         try {
 
-            $stmt = $this->pdo->prepare("DELETE FROM config_horario WHERE horario_id = :horario_id");
+            $stmt = $this->pdo->prepare("DELETE FROM config_horario WHERE id = :horario_id");
             $stmt = $this->db->bindArray($stmt, [
                 'horario_id' => $horario
             ]);

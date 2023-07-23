@@ -43,17 +43,11 @@ class ControlAgenda extends ControlRoot{
             $values->cep = Validation::regexNum($values->cep);
         }
 
-        if (Validation::validaEmail($values->email)) {
-            $values->email = strtolower($values->email);
-        } else {
-            return $this->view->erro("Email inválido", "invalid_email", 500);
-        }
-
         // get empresa
         if ($empresa = $this->model->empresas->get($values->empresa)) {
 
             // verifica configurações
-            if($configuracao = $this->model->agenda->getConfig($empresa->id)) {
+            if($configuracao = $this->model->empresas->getConfig($empresa->id)) {
 
                 // adiciona fim
                 $values->fim = date("Y-m-d H:i:s", strtotime("+{$configuracao->tempo} hours", strtotime($values->inicio)));
@@ -64,13 +58,13 @@ class ControlAgenda extends ControlRoot{
                 if ($atendimento = $this->model->empresas->getHorarios($values->empresa, $dia_da_semana)) {
 
                     foreach ($atendimento as $att_horario) {
-                        $att_horario->inicio = strtotime($att_horario->inicio);
-                        $att_horario->fim = strtotime($att_horario->fim);
+                        $att_horario->hora_inicial = strtotime($att_horario->hora_inicial);
+                        $att_horario->hora_final = strtotime($att_horario->hora_final);
 
-                        $inicio = strtotime($values->inicio);
-                        $fim = strtotime($values->fim);
+                        $inicio = strtotime(date("H:i:s", strtotime($values->inicio)));
+                        $fim = strtotime(date("H:i:s", strtotime($values->fim)));
 
-                        if (!($inicio >= $att_horario->inicio && $fim <= $att_horario->fim)) {
+                        if (!($inicio >= $att_horario->hora_inicial && $fim <= $att_horario->hora_final)) {
                             return $this->view->erro("Empresa não atende este horário", "indisponible_time", 404);
                         }
 
@@ -105,11 +99,11 @@ class ControlAgenda extends ControlRoot{
         return $this->view->erro("Empresa não encontrada", "not_found_empresa", 404);
     }
 
-    // atualiza horario (apenas se for 1 dia antes) (apenas inicio)
+    // atualiza horario
     public function update() {
 
-        $values = Validation::filter($this->app->post, [
-            'guid' => 'int',
+        $values = (object) Validation::filter($this->app->post, [
+            'guid' => 'string',
             'inicio' => 'string',
         ]);
 
@@ -117,15 +111,40 @@ class ControlAgenda extends ControlRoot{
         if ($horario = $this->model->agenda->get($values->guid)) {
 
             // verifica configurações
-            if($configuracao = $this->model->agenda->getConfig($horario->empresas_id)) {
+            if($configuracao = $this->model->empresas->getConfig($horario->empresas_id)) {
 
                 // verifica se agora é pelomenos um dia antes do horario
-                if (strtotime($horario->inicio) > strtotime("-{$configuracao->limite_alteracao} day")) {
+                if (strtotime($horario->inicio) <= strtotime("-{$configuracao->limite_alteracao} day", strtotime("now"))) {
                     return $this->view->erro("Horario não pode ser alterado", "very_recent", 404);
                 }
 
                 // adiciona fim
                 $values->fim = date("Y-m-d H:i:s", strtotime("+{$configuracao->tempo} hours", strtotime($values->inicio)));
+
+                // verifica horarios de atendimento da empresa
+                $dia_da_semana = date('N', strtotime($values->inicio));
+
+                $values->empresa = $horario->empresas_id;
+                
+                if ($atendimento = $this->model->empresas->getHorarios($horario->empresas_id, $dia_da_semana)) {
+
+                    foreach ($atendimento as $att_horario) {
+                        $att_horario->hora_inicial = strtotime($att_horario->hora_inicial);
+                        $att_horario->hora_final = strtotime($att_horario->hora_final);
+
+                        $inicio = strtotime(date("H:i:s", strtotime($values->inicio)));
+                        $fim = strtotime(date("H:i:s", strtotime($values->fim)));
+
+                        if (!($inicio >= $att_horario->hora_inicial && $fim <= $att_horario->hora_final)) {
+                            return $this->view->erro("Empresa não atende este horário", "indisponible_time", 404);
+                        }
+
+                    }
+
+                } else {
+                    return $this->view->erro("Empresa não atende este dia", "indisponible_day", 404);
+                }
+
 
                 // check horario
                 if ($horarios = $this->model->agenda->check($values)) {
@@ -156,7 +175,7 @@ class ControlAgenda extends ControlRoot{
     public function get() {
 
         $values = (Object) Validation::filter($this->app->post, [
-            'guid' => 'int'
+            'guid' => 'string'
         ]);
 
         if ($horario = $this->model->agenda->get($values->guid)) {
@@ -206,15 +225,58 @@ class ControlAgenda extends ControlRoot{
 
         $values = (Object) Validation::filter($this->app->post, [
             'inicio' => 'string',
-            'fim' => 'string',
             'empresa' => 'int',
         ]);
 
-        if ($horario = $this->model->agenda->check($values)) {
-            return $this->view->send($horario);
+        // get empresa
+        if ($empresa = $this->model->empresas->get($values->empresa)) {
+
+            // verifica configurações
+            if($configuracao = $this->model->empresas->getConfig($empresa->id)) {
+
+                // adiciona fim
+                $values->fim = date("Y-m-d H:i:s", strtotime("+{$configuracao->tempo} hours", strtotime($values->inicio)));
+
+                // verifica horarios de atendimento da empresa
+                $dia_da_semana = date('N', strtotime($values->inicio));
+                
+                if ($atendimento = $this->model->empresas->getHorarios($values->empresa, $dia_da_semana)) {
+
+                    foreach ($atendimento as $att_horario) {
+                        $att_horario->hora_inicial = strtotime($att_horario->hora_inicial);
+                        $att_horario->hora_final = strtotime($att_horario->hora_final);
+
+                        $inicio = strtotime(date("H:i:s", strtotime($values->inicio)));
+                        $fim = strtotime(date("H:i:s", strtotime($values->fim)));
+
+                        if (!($inicio >= $att_horario->hora_inicial && $fim <= $att_horario->hora_final)) {
+                            return $this->view->erro("Empresa não atende este horário", "indisponible_time", 404);
+                        }
+
+                    }
+
+                } else {
+                    return $this->view->erro("Empresa não atende este dia", "indisponible_day", 404);
+                }
+
+                // check horario
+                if ($horarios = $this->model->agenda->check($values)) {
+
+                    if (count($horarios) >= $configuracao->quantidade) {
+                        return $this->view->erro("Horario não disponivel", "agenda_cheia", 404);
+                    }
+
+                }
+
+                return $this->view->send(["mensagem" => "Horario disponivel!"]);
+
+            }
+
+            return $this->view->erro("Configuração não encontrada para empresa", "not_found_config", 404);
+
         }
 
-        return $this->view->erro("Horario não disponivel", "not_found", 404);
+        return $this->view->erro("Empresa não encontrada", "not_found_empresa", 404);
 
     }
 

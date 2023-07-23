@@ -9,24 +9,28 @@ class ModelAgenda extends ModelRoot {
 
             $guid = guidv4();
 
-            $stmt = $this->pdo->prepare("INSERT INTO horarios (inicio, fim, `guid`, empresas_id) VALUES (:inicio, :fim, :guid, :empresas_id)");
-            $stmt = $this->db->bindArray($stmt, [
-                'inicio' => $values->inicio,
-                'fim' => $values->fim,
-                'guid' => $guid,
-                'empresas_id' => $values->empresa
-            ]);
-            $stmt->execute();
+            if ($cliente = $this->createCliente($values)) {
 
-            if ($stmt->rowCount() > 0) {
-
-                $id = $this->pdo->lastInsertId();
-
-                $this->createCliente($values);
-
-                return $this->get($id);
-
+                $stmt = $this->pdo->prepare("INSERT INTO horarios (inicio, fim, `guid`, empresas_id, cliente_id) VALUES (:inicio, :fim, :guid, :empresas_id, :cliente_id)");
+                $stmt = $this->db->bindArray($stmt, [
+                    'inicio' => $values->inicio,
+                    'fim' => $values->fim,
+                    'guid' => $guid,
+                    'empresas_id' => $values->empresa,
+                    "cliente_id" => $cliente
+                ]);
+                $stmt->execute();
+    
+                if ($stmt->rowCount() > 0) {
+    
+                    return $this->get($guid);
+    
+                }
+                
+            } else {
+                $this->view->erro('Erro ao criar cliente', 'db_model_cli', 500, true);
             }
+
 
         } catch (PDOException $erro) {
             $this->view->erro('Erro ao criar horario', 'db_model', 500, true);
@@ -47,13 +51,12 @@ class ModelAgenda extends ModelRoot {
                 $values->endereco_id = null;
             }
 
-            $stmt = $this->pdo->prepare("INSERT INTO clientes (nome, telefone, cpf, endereco_id, horarios_id) VALUES (:nome, :telefone, :cpf, :endereco_id, :horarios_id)");
+            $stmt = $this->pdo->prepare("INSERT INTO cliente (nome, telefone, cpf, endereco_id) VALUES (:nome, :telefone, :cpf, :endereco_id)");
             $stmt = $this->db->bindArray($stmt, [
                 'nome' => $values->nome,
                 'telefone' => $values->telefone,
                 'cpf' => $values->cpf,
-                'endereco_id' => $values->endereco_id,
-                'horarios_id' => $values->horarios_id
+                'endereco_id' => $values->endereco_id
             ]);
             $stmt->execute();
 
@@ -149,7 +152,7 @@ class ModelAgenda extends ModelRoot {
     }
 
     // buscar horario
-    public function get($id) {
+    public function get(string $id) {
 
         try {
 
@@ -163,8 +166,8 @@ class ModelAgenda extends ModelRoot {
 
                 $horario = $stmt->fetch(PDO::FETCH_OBJ);
 
-                $horario->empresa = $this->model->empresa->get($horario->empresas_id);
-                $horario->cliente = $this->getCliente($horario->clientes_id);
+                $horario->empresa = $this->model->empresas->get($horario->empresas_id);
+                $horario->cliente = $this->getCliente($horario->cliente_id);
 
                 return $horario;
 
@@ -183,7 +186,7 @@ class ModelAgenda extends ModelRoot {
 
         try {
 
-            $stmt = $this->pdo->prepare("SELECT * FROM clientes WHERE `id` = :id");
+            $stmt = $this->pdo->prepare("SELECT * FROM cliente WHERE `id` = :id");
             $stmt = $this->db->bindArray($stmt, [
                 'id' => $id
             ]);
@@ -226,7 +229,8 @@ class ModelAgenda extends ModelRoot {
 
                 foreach ($horarios as $key => $horario) {
 
-                    $horarios[$key]->cliente = $this->getCliente($horario->clientes_id);
+                    $horarios[$key]->cliente = $this->getCliente($horario->cliente_id);
+                    $horarios[$key]->empresa = $this->model->empresas->get($horario->empresas_id);
 
                 }
 
@@ -251,7 +255,7 @@ class ModelAgenda extends ModelRoot {
                 "SELECT * FROM horarios 
                 WHERE 
                     (
-                        (`inicio` >= :inicio AND `fim` <= :fim) OR
+                        (`inicio` >= :inicio AND `fim` < :fim) OR
                         (`inicio` <= :inicio AND `fim` >= :inicio) OR
                         (`inicio` <= :fim AND `fim` >= :fim)
                     ) AND

@@ -282,9 +282,13 @@ class ControlEmpresas extends ControlRoot{
         }
 
         // verifica se horario já existe ou esta em um outro intervalo no mesmo dia
-        if ($horarios = $this->model->empresas->getHorarios($values->empresa, $values->dia)) {
+        if ($horarios = $this->model->empresas->getHorarios($horario->empresas_id, $values->dia)) {
             
             foreach ($horarios as $horario) {
+
+                if ($horario->id == $values->horario) {
+                    continue;
+                }
 
                 $horario->hora_inicial = strtotime($horario->hora_inicial);
                 $horario->hora_final = strtotime($horario->hora_final);
@@ -301,7 +305,7 @@ class ControlEmpresas extends ControlRoot{
         }
 
         if ($empresa = $this->model->empresas->updateHorario($values)) {
-            return $this->view->send($empresa);
+            return $this->view->sucesso();
         }
 
         return $this->view->erro("Erro ao atualizar horario", "update_horario_error", 500);
@@ -363,8 +367,8 @@ class ControlEmpresas extends ControlRoot{
 
         }
 
-        if ($empresa = $this->model->empresas->addHorario($values)) {
-            return $this->view->send($empresa);
+        if ($this->model->empresas->addHorario($values)) {
+            return $this->view->sucesso();
         }
 
         return $this->view->erro("Erro ao adicionar horario", "add_horario_error", 500);
@@ -380,8 +384,8 @@ class ControlEmpresas extends ControlRoot{
             'horario' => 'int',
         ]);
 
-        if ($empresa = $this->model->empresas->deleteHorario($values->horario)) {
-            return $this->view->send($empresa);
+        if ($this->model->empresas->deleteHorario($values->horario)) {
+            return $this->view->sucesso();
         }
 
         return $this->view->erro("Erro ao deletar horario", "delete_horario_error", 500);
